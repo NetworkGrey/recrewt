@@ -2,9 +2,9 @@
 
 AI-assisted talent sourcing and casting management platform for the African entertainment industry.
 
-**Live site:** https://recrewt.com (update when domain is confirmed)
-**Staging:** https://staging.recrewt.com (update when staging is set up)
-**WP admin:** https://recrewt.com/wp-admin
+**Live site:** https://recrewt.app
+**Staging:** TBD (see docs/architecture.md — staging environment not yet decided)
+**WP admin:** https://recrewt.app/wp-admin
 
 ---
 
