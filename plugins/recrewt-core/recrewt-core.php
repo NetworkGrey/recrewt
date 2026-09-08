@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:  reCREWt Core
- * Plugin URI:   https://recrewt.com
+ * Plugin URI:   https://recrewt.app
  * Description:  Core backend logic for reCREWt. Handles custom AJAX endpoints,
  *               Ultimate Member hooks, and role-specific capabilities.
  *               This plugin must be active at all times.
