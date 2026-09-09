@@ -18,22 +18,30 @@ defined( 'ABSPATH' ) || exit;
  * Restrict the date_of_birth field so it is only visible to
  * casting_pro, production, and admin roles — never the public or talent peers.
  *
- * UM calls this filter for each field when building a profile view.
+ * UM calls this filter for each field when building a profile view. UM's own
+ * um_can_view_field() only ever passes two args — $can_view and the full
+ * field-config array ($data, keyed by 'metakey' etc.) — not a bare $key and
+ * $profile_id as originally assumed here. That mismatch caused a fatal
+ * ArgumentCountError on every UM profile page. Signature confirmed against
+ * UM 2.13.0 source (includes/um-short-functions.php) before this fix.
  *
- * @param bool   $can_view  Whether the current viewer can see this field.
- * @param string $key       The field meta key.
- * @param int    $profile_id The user ID whose profile is being viewed.
+ * @param bool  $can_view Whether the current viewer can see this field.
+ * @param array $data     The field config array, keyed by 'metakey' etc.
  * @return bool
  */
-function recrewt_um_can_view_field( $can_view, $key, $profile_id ) {
+function recrewt_um_can_view_field( $can_view, $data ) {
     $restricted_fields = array( 'date_of_birth' );
+
+    $key = isset( $data['metakey'] ) ? $data['metakey'] : '';
 
     if ( ! in_array( $key, $restricted_fields, true ) ) {
         return $can_view;
     }
 
+    $profile_id = function_exists( 'um_profile_id' ) ? um_profile_id() : 0;
+
     // Always allow the profile owner and admins
-    if ( current_user_can( 'administrator' ) || get_current_user_id() === (int) $profile_id ) {
+    if ( current_user_can( 'administrator' ) || ( $profile_id && get_current_user_id() === (int) $profile_id ) ) {
         return true;
     }
 
@@ -48,7 +56,7 @@ function recrewt_um_can_view_field( $can_view, $key, $profile_id ) {
 
     return false;
 }
-add_filter( 'um_can_view_field', 'recrewt_um_can_view_field', 10, 3 );
+add_filter( 'um_can_view_field', 'recrewt_um_can_view_field', 10, 2 );
 
 
 /* ============================================================
