@@ -88,10 +88,20 @@ add_action( 'wp_enqueue_scripts', 'recrewt_enqueue_scripts' );
  * (includes/core/um-actions-profile.php) actually fires, confirmed
  * against UM 2.13.0 source. Signature: ( $user_id, $args, $to_update ).
  *
+ * Role is read via get_userdata(), not um_user( $user_id, 'role' ) —
+ * um_user()'s real signature is um_user( $data, $attrs = null ); it has
+ * no user-ID parameter and only ever reads whichever user UM last
+ * fetched via um_fetch_user(), so passing a user ID as its first arg
+ * silently returns false. Confirmed against UM 2.13.0 source
+ * (includes/um-short-functions.php).
+ *
  * @param int $user_id The user whose profile was just saved.
  */
 function recrewt_um_profile_setup_done( $user_id ) {
-    if ( um_user( $user_id, 'role' ) === 'talent' ) {
+    $user = get_userdata( $user_id );
+    $role = $user && ! empty( $user->roles ) ? $user->roles[0] : '';
+
+    if ( $role === 'talent' ) {
         update_user_meta( $user_id, 'rc_profile_setup_complete', 1 );
         $dashboard = get_permalink( get_page_by_path( 'dashboard' ) );
         if ( $dashboard ) {
@@ -109,12 +119,16 @@ add_action( 'um_after_user_updated', 'recrewt_um_profile_setup_done' );
 /**
  * Send users to the right place after login based on their role.
  *
+ * Role is read via get_userdata(), not um_user( $user_id, 'role' ) —
+ * see the note on recrewt_um_profile_setup_done() above for why.
+ *
  * @param string $redirect_to The default redirect URL.
  * @param int    $user_id     The user being logged in.
  * @return string             Modified redirect URL.
  */
 function recrewt_um_login_redirect( $redirect_to, $user_id ) {
-    $role = um_user( $user_id, 'role' );
+    $user = get_userdata( $user_id );
+    $role = $user && ! empty( $user->roles ) ? $user->roles[0] : '';
 
     switch ( $role ) {
         case 'talent':
