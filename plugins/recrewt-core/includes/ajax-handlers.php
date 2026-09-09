@@ -141,9 +141,9 @@ function recrewt_ajax_get_discover_profiles() {
             'province'          => get_user_meta( $user->ID, 'province', true ),
             'profile_photo'     => esc_url( $photo_url ),
             'age_range'         => recrewt_age_range_from_dob( $dob ), // from functions.php
-            'gender'            => get_user_meta( $user->ID, 'gender', true ),
+            'gender'            => get_user_meta( $user->ID, 'talent_gender', true ),
             'height_cm'         => (int) get_user_meta( $user->ID, 'height_cm', true ),
-            'languages'         => (array) get_user_meta( $user->ID, 'languages', true ),
+            'languages'         => (array) get_user_meta( $user->ID, 'talent_languages', true ),
             'profile_url'       => esc_url( um_user_profile_url( $user->ID ) ),
         );
     }

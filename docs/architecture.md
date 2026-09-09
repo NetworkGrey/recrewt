@@ -106,9 +106,9 @@ next card loaded                         Saves talent user ID to
 | `talent_categories` | User meta | array | Multi-select talent types |
 | `city` | User meta | string | City of residence |
 | `province` | User meta | string | Province / region |
-| `languages` | User meta | array | Spoken languages |
+| `talent_languages` | User meta | array | Spoken languages (key is `talent_languages`, not `languages` — UM reserves `languages` as a predefined field key) |
 | `date_of_birth` | User meta | date | Full DOB (restricted visibility) |
-| `gender` | User meta | string | Gender identity |
+| `talent_gender` | User meta | string | Gender identity (key is `talent_gender`, not `gender` — UM reserves `gender` as a predefined field key) |
 | `height_cm` | User meta | int | Height in centimetres |
 | `bio_short` | User meta | string | Short intro, max 300 chars |
 | `rc_favourites` | User meta | array | Array of user IDs saved by casting pro |

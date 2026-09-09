@@ -59,7 +59,7 @@ Column definitions:
 | 3 | Talent categories | Multi-checkbox | talent_categories | Yes | See options list A below |
 | 4 | City | Text | city | Yes | Max 60 chars. E.g. "Cape Town" |
 | 5 | Province / region | Select (dropdown) | province | Yes | See options list B below |
-| 6 | Languages | Multi-checkbox | languages | Yes | See options list C below. Min 1 selection. |
+| 6 | Languages | Multi-checkbox | talent_languages | Yes | See options list C below. Min 1 selection. Meta key is `talent_languages`, not `languages` — UM reserves `languages` as a predefined field key. |
 
 **Options list A — talent_categories:**
 Actor, Extra / background, Model, Voice artist, Stunt performer, Dancer, Musician, Influencer / content creator, Production crew
@@ -79,7 +79,7 @@ Afrikaans, English, isiZulu, isiXhosa, Sesotho, Setswana, Sepedi, Xitsonga, Tshi
 | # | Field label | UM field type | Meta key | Required | Options / notes |
 |---|---|---|---|---|---|
 | 7 | Date of birth | Date | date_of_birth | Yes | UM date picker. Do not display the calculated age publicly — only casting professionals with verified accounts should see DOB. Display age range on public profile instead. |
-| 8 | Gender | Select (dropdown) | gender | Yes | Man, Woman, Non-binary, Prefer not to say |
+| 8 | Gender | Select (dropdown) | talent_gender | Yes | Man, Woman, Non-binary, Prefer not to say. Meta key is `talent_gender`, not `gender` — UM reserves `gender` as a predefined field key. |
 | 9 | Height (cm) | Number | height_cm | No | Min 100, max 230. Helper text: "Enter in centimetres, e.g. 175" |
 | 10 | Short bio | Textarea | bio_short | No | Max 300 chars. Helper text: "A short intro casting directors will read first. Keep it punchy." |
 
