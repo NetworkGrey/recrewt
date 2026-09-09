@@ -40,7 +40,7 @@ add_action( 'wp_enqueue_scripts', 'recrewt_enqueue_styles' );
 function recrewt_enqueue_scripts() {
 
     // Profile page interactions — loaded on profile and profile-setup pages only
-    if ( is_page( array( 'profile-setup', 'account' ) ) || um_is_profile_page() ) {
+    if ( is_page( array( 'profile-setup', 'account' ) ) || um_is_core_page( 'user' ) ) {
         wp_enqueue_script(
             'recrewt-profile',
             get_stylesheet_directory_uri() . '/js/recrewt-profile.js',
