@@ -76,10 +76,17 @@ add_action( 'wp_enqueue_scripts', 'recrewt_enqueue_scripts' );
 
 /**
  * When a talent user's profile is saved, mark setup as complete and
- * send them to the dashboard. Runs on every account update, not just
- * the first one — registration's own redirect to /profile-setup is
- * handled separately by UM's per-role "URL redirect after email
- * activation" setting, so this only needs to handle the save itself.
+ * send them to the dashboard. Registration's own redirect to
+ * /profile-setup is handled separately by UM's per-role "URL redirect
+ * after email activation" setting, so this only needs to handle the
+ * save itself.
+ *
+ * Hooked to um_after_user_updated, not um_after_user_account_updated —
+ * the latter only fires for UM's Account-settings form (includes/core/
+ * class-account.php), never for a Profile-type form save like this
+ * one. um_after_user_updated is the hook UM's own profile-save handler
+ * (includes/core/um-actions-profile.php) actually fires, confirmed
+ * against UM 2.13.0 source. Signature: ( $user_id, $args, $to_update ).
  *
  * @param int $user_id The user whose profile was just saved.
  */
@@ -92,7 +99,7 @@ function recrewt_um_profile_setup_done( $user_id ) {
         }
     }
 }
-add_action( 'um_after_user_account_updated', 'recrewt_um_profile_setup_done' );
+add_action( 'um_after_user_updated', 'recrewt_um_profile_setup_done' );
 
 
 /* ============================================================
