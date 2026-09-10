@@ -4,13 +4,16 @@
  * WP AJAX endpoints for reCREWt frontend features.
  *
  * All endpoints require:
- *  - A logged-in user (no nopriv handlers for write actions)
+ *  - A logged-in user (no nopriv handlers for write actions), except
+ *    rc_submit_lead below — a public marketing form anonymous visitors
+ *    must be able to submit, protected instead by nonce + honeypot.
  *  - A valid nonce checked before any data is read or written
  *
  * Endpoints registered here:
  *  - rc_save_favourite         (Sprint 3) — save a talent user to favourites
  *  - rc_remove_favourite       (Sprint 3) — remove a talent user from favourites
  *  - rc_get_discover_profiles  (Sprint 3) — fetch paginated talent profiles for the swipe stack
+ *  - rc_submit_lead            — "Get Started" / "Join Beta" modal submissions, emailed to hello@recrewt.app
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -149,4 +152,61 @@ function recrewt_ajax_get_discover_profiles() {
     }
 
     wp_send_json_success( array( 'profiles' => $profiles ) );
+}
+
+
+/* ============================================================
+   rc_submit_lead
+   ============================================================ */
+
+add_action( 'wp_ajax_rc_submit_lead', 'recrewt_ajax_submit_lead' );
+add_action( 'wp_ajax_nopriv_rc_submit_lead', 'recrewt_ajax_submit_lead' );
+
+/**
+ * Handle "Get Started" / "Join Beta" modal submissions.
+ * Public form (nopriv) -- protected by nonce + honeypot, not login.
+ */
+function recrewt_ajax_submit_lead() {
+    check_ajax_referer( 'rc_lead_nonce', 'nonce' );
+
+    // Honeypot: real users never fill this in. Pretend success so bots
+    // don't learn to look elsewhere; don't send mail or validate further.
+    if ( ! empty( $_POST['rc_lead_hp'] ) ) {
+        wp_send_json_success( array( 'message' => "Thanks! We'll be in touch soon." ) );
+    }
+
+    $name   = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
+    $email  = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+    $role   = isset( $_POST['role'] ) ? sanitize_text_field( wp_unslash( $_POST['role'] ) ) : '';
+    $source = isset( $_POST['source'] ) ? sanitize_text_field( wp_unslash( $_POST['source'] ) ) : '';
+
+    $allowed_roles = array( 'Talent', 'Crew', 'Casting Agent', 'Enterprise' );
+
+    if ( '' === $name || '' === $email || '' === $role ) {
+        wp_send_json_error( array( 'message' => 'Please fill in all fields.' ), 400 );
+    }
+
+    if ( ! is_email( $email ) ) {
+        wp_send_json_error( array( 'message' => 'Please enter a valid email address.' ), 400 );
+    }
+
+    if ( ! in_array( $role, $allowed_roles, true ) ) {
+        wp_send_json_error( array( 'message' => 'Please select a valid option.' ), 400 );
+    }
+
+    $to      = 'hello@recrewt.app';
+    $subject = 'New Beta signup: ' . $name;
+    $body    = "New \"Get Started\" / \"Join Beta\" submission:\n\n"
+        . "Name: {$name}\n"
+        . "Email: {$email}\n"
+        . "I am a: {$role}\n"
+        . "Source: {$source}\n";
+
+    $sent = wp_mail( $to, $subject, $body );
+
+    if ( $sent ) {
+        wp_send_json_success( array( 'message' => "Thanks! We'll be in touch soon." ) );
+    } else {
+        wp_send_json_error( array( 'message' => 'Something went wrong. Please try again later.' ), 500 );
+    }
 }
