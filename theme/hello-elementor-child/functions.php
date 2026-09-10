@@ -66,6 +66,26 @@ function recrewt_enqueue_scripts() {
     //         'userId'  => get_current_user_id(),
     //     ) );
     // }
+
+    // "Get Started" / "Join Beta" lead modal — loaded site-wide since these
+    // buttons can appear on any page; harmless (no-op) when none are present.
+    wp_enqueue_style(
+        'recrewt-lead-modal',
+        get_stylesheet_directory_uri() . '/css/recrewt-lead-modal.css',
+        array(),
+        '1.0.0'
+    );
+    wp_enqueue_script(
+        'recrewt-lead-modal',
+        get_stylesheet_directory_uri() . '/js/recrewt-lead-modal.js',
+        array(),
+        '1.0.0',
+        true // load in footer
+    );
+    wp_localize_script( 'recrewt-lead-modal', 'rcLeadModal', array(
+        'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+        'nonce'   => wp_create_nonce( 'rc_lead_nonce' ),
+    ) );
 }
 add_action( 'wp_enqueue_scripts', 'recrewt_enqueue_scripts' );
 
