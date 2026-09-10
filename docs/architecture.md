@@ -63,7 +63,7 @@ Email verification link
         |
         | saves to WP user meta
         v
-/profiles/{username}  [public profile, live in directory]
+/user/{username}  [public profile, live in directory at /members — UM's actual default slugs, corrected from the originally-assumed /profiles]
         |
         v
 /dashboard  [account page, completion prompt, quick actions]

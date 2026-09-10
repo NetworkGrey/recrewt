@@ -133,8 +133,8 @@ Fields deferred to this form:
 |---|---|
 | Role slug | talent |
 | Default account status | Awaiting email confirmation |
-| Profile permalink | /profiles/{username} |
-| Directory page | /profiles |
+| Profile permalink | /user/{username} (UM's actual default; corrected from the originally-assumed /profiles/{username} — nothing in the codebase hardcodes the old path) |
+| Directory page | /members (UM's actual default; corrected from the originally-assumed /profiles) |
 | Directory default sort | Recently joined |
 | Who can view profiles | Everyone (public) |
 | Who can view DOB field | Members with role: casting_pro, production, admin |
