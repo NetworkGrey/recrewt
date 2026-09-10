@@ -40,7 +40,7 @@ add_action( 'wp_enqueue_scripts', 'recrewt_enqueue_styles' );
 function recrewt_enqueue_scripts() {
 
     // Profile page interactions — loaded on profile and profile-setup pages only
-    if ( is_page( array( 'profile-setup', 'account' ) ) || um_is_profile_page() ) {
+    if ( is_page( array( 'profile-setup', 'account' ) ) || um_is_core_page( 'user' ) ) {
         wp_enqueue_script(
             'recrewt-profile',
             get_stylesheet_directory_uri() . '/js/recrewt-profile.js',
@@ -71,34 +71,45 @@ add_action( 'wp_enqueue_scripts', 'recrewt_enqueue_scripts' );
 
 
 /* ============================================================
-   2. Ultimate Member — post-registration redirect
+   2. Ultimate Member — profile setup completion
    ============================================================ */
 
 /**
- * Redirect newly registered talent users to the profile setup page
- * instead of the default UM account page.
+ * When a talent user's profile is saved, mark setup as complete and
+ * send them to the dashboard. Registration's own redirect to
+ * /profile-setup is handled separately by UM's per-role "URL redirect
+ * after email activation" setting, so this only needs to handle the
+ * save itself.
  *
- * @param int $user_id The newly registered user's ID.
+ * Hooked to um_after_user_updated, not um_after_user_account_updated —
+ * the latter only fires for UM's Account-settings form (includes/core/
+ * class-account.php), never for a Profile-type form save like this
+ * one. um_after_user_updated is the hook UM's own profile-save handler
+ * (includes/core/um-actions-profile.php) actually fires, confirmed
+ * against UM 2.13.0 source. Signature: ( $user_id, $args, $to_update ).
+ *
+ * Role is read via get_userdata(), not um_user( $user_id, 'role' ) —
+ * um_user()'s real signature is um_user( $data, $attrs = null ); it has
+ * no user-ID parameter and only ever reads whichever user UM last
+ * fetched via um_fetch_user(), so passing a user ID as its first arg
+ * silently returns false. Confirmed against UM 2.13.0 source
+ * (includes/um-short-functions.php).
+ *
+ * @param int $user_id The user whose profile was just saved.
  */
-function recrewt_um_after_register_redirect( $user_id ) {
-    // Only redirect talent role — other roles may have different flows
-    if ( um_user( $user_id, 'role' ) === 'talent' ) {
-        // Store a flag so we know this is a first-time setup visit
-        update_user_meta( $user_id, 'rc_profile_setup_complete', 0 );
+function recrewt_um_profile_setup_done( $user_id ) {
+    $user = get_userdata( $user_id );
+    $role = $user && ! empty( $user->roles ) ? $user->roles[0] : '';
 
-        // Redirect to profile setup page
-        // Update the page slug below if you use a different slug in WP
-        $setup_page = get_permalink( get_page_by_path( 'profile-setup' ) );
-        if ( $setup_page ) {
-            exit( wp_redirect( esc_url( $setup_page ) ) );
+    if ( $role === 'talent' ) {
+        update_user_meta( $user_id, 'rc_profile_setup_complete', 1 );
+        $dashboard = get_permalink( get_page_by_path( 'dashboard' ) );
+        if ( $dashboard ) {
+            exit( wp_redirect( esc_url( $dashboard ) ) );
         }
     }
 }
-add_action( 'um_after_user_account_updated', 'recrewt_um_after_register_redirect' );
-
-// Note: UM uses 'um_registration_complete' for registration, not account update.
-// The correct hook depends on your UM version. If the above does not fire,
-// try 'um_registration_complete' with the same callback signature.
+add_action( 'um_after_user_updated', 'recrewt_um_profile_setup_done' );
 
 
 /* ============================================================
@@ -108,12 +119,16 @@ add_action( 'um_after_user_account_updated', 'recrewt_um_after_register_redirect
 /**
  * Send users to the right place after login based on their role.
  *
+ * Role is read via get_userdata(), not um_user( $user_id, 'role' ) —
+ * see the note on recrewt_um_profile_setup_done() above for why.
+ *
  * @param string $redirect_to The default redirect URL.
  * @param int    $user_id     The user being logged in.
  * @return string             Modified redirect URL.
  */
 function recrewt_um_login_redirect( $redirect_to, $user_id ) {
-    $role = um_user( $user_id, 'role' );
+    $user = get_userdata( $user_id );
+    $role = $user && ! empty( $user->roles ) ? $user->roles[0] : '';
 
     switch ( $role ) {
         case 'talent':
@@ -141,26 +156,7 @@ add_filter( 'um_login_redirect_url', 'recrewt_um_login_redirect', 10, 2 );
 
 
 /* ============================================================
-   4. Mark profile setup as complete
-   ============================================================ */
-
-/**
- * When a talent user saves their profile for the first time,
- * mark the setup as complete so they are not redirected back on next login.
- *
- * @param int $user_id The user who saved their profile.
- */
-function recrewt_mark_profile_setup_complete( $user_id ) {
-    if ( um_user( $user_id, 'role' ) === 'talent' ) {
-        update_user_meta( $user_id, 'rc_profile_setup_complete', 1 );
-    }
-}
-add_action( 'um_after_user_account_updated', 'recrewt_mark_profile_setup_complete', 20 );
-// Priority 20 so it fires after the redirect check above (priority 10)
-
-
-/* ============================================================
-   5. Utilities
+   4. Utilities
    ============================================================ */
 
 /**
