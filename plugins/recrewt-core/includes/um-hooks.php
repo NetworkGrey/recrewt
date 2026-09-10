@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
    ============================================================ */
 
 /**
- * Restrict the date_of_birth field so it is only visible to
+ * Restrict the date_of_birth and ethnicity fields so they are only visible to
  * casting_pro, production, and admin roles — never the public or talent peers.
  *
  * UM calls this filter for each field when building a profile view. UM's own
@@ -30,7 +30,7 @@ defined( 'ABSPATH' ) || exit;
  * @return bool
  */
 function recrewt_um_can_view_field( $can_view, $data ) {
-    $restricted_fields = array( 'date_of_birth' );
+    $restricted_fields = array( 'date_of_birth', 'ethnicity' );
 
     $key = isset( $data['metakey'] ) ? $data['metakey'] : '';
 
@@ -67,9 +67,18 @@ add_filter( 'um_can_view_field', 'recrewt_um_can_view_field', 10, 2 );
  * Sanitise the bio_short field to strip HTML and enforce max length.
  * UM fires 'um_user_after_updating_profile' after a profile save.
  *
- * @param int $user_id The user whose profile was just saved.
+ * Signature confirmed against UM 2.13.0 source
+ * (includes/core/um-actions-profile.php): the hook actually fires as
+ * do_action( 'um_user_after_updating_profile', $to_update, $user_id, $args ) —
+ * three args, not the single $user_id originally assumed here. That mismatch
+ * meant this callback was silently never receiving a usable $user_id
+ * (WordPress passed $to_update, an array, into the $user_id parameter slot).
+ *
+ * @param array $to_update Submitted form data (unused here).
+ * @param int   $user_id   The user whose profile was just saved.
+ * @param array $args      UM form args (unused here).
  */
-function recrewt_sanitise_bio_on_save( $user_id ) {
+function recrewt_sanitise_bio_on_save( $to_update, $user_id, $args ) {
     $bio = get_user_meta( $user_id, 'bio_short', true );
     if ( ! empty( $bio ) ) {
         $bio = wp_strip_all_tags( $bio );
@@ -77,29 +86,18 @@ function recrewt_sanitise_bio_on_save( $user_id ) {
         update_user_meta( $user_id, 'bio_short', $bio );
     }
 }
-add_action( 'um_user_after_updating_profile', 'recrewt_sanitise_bio_on_save' );
+add_action( 'um_user_after_updating_profile', 'recrewt_sanitise_bio_on_save', 10, 3 );
 
 
 /* ============================================================
-   Directory query — exclude admin and non-talent accounts
+   Directory role restriction — handled natively, not here
+   ============================================================
+
+   The talent directory (Members page, UM Member Directory post_id=9) is
+   restricted to the talent role via its own native "User Roles to Display"
+   setting, not custom code. A recrewt_um_directory_query_args() function
+   used to live here, hooked to 'um_query_args_filter' — that filter does
+   not exist anywhere in Ultimate Member (verified against the 2.13.0
+   source), so it never fired. Removed rather than fixed: the native
+   per-directory setting already does the job with no custom code needed.
    ============================================================ */
-
-/**
- * Modify the UM directory query to only show talent-role users.
- * Prevents admin or casting pro accounts appearing in the public talent directory.
- *
- * @param array $args WP_User_Query arguments built by UM.
- * @return array Modified query args.
- */
-function recrewt_um_directory_query_args( $args ) {
-    // Only apply to the talent directory (UM directory form ID — update ID below)
-    // To find the form ID: UM admin → Forms, hover the talent directory form, check the ID in the URL
-    $talent_directory_form_id = 0; // TODO: replace 0 with actual UM form ID after Elouise creates it
-
-    if ( isset( $args['um_form_id'] ) && (int) $args['um_form_id'] === $talent_directory_form_id ) {
-        $args['role__in'] = array( 'talent' );
-    }
-
-    return $args;
-}
-add_filter( 'um_query_args_filter', 'recrewt_um_directory_query_args' );
