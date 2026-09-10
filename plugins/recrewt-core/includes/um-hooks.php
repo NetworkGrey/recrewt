@@ -90,25 +90,14 @@ add_action( 'um_user_after_updating_profile', 'recrewt_sanitise_bio_on_save', 10
 
 
 /* ============================================================
-   Directory query — exclude admin and non-talent accounts
+   Directory role restriction — handled natively, not here
+   ============================================================
+
+   The talent directory (Members page, UM Member Directory post_id=9) is
+   restricted to the talent role via its own native "User Roles to Display"
+   setting, not custom code. A recrewt_um_directory_query_args() function
+   used to live here, hooked to 'um_query_args_filter' — that filter does
+   not exist anywhere in Ultimate Member (verified against the 2.13.0
+   source), so it never fired. Removed rather than fixed: the native
+   per-directory setting already does the job with no custom code needed.
    ============================================================ */
-
-/**
- * Modify the UM directory query to only show talent-role users.
- * Prevents admin or casting pro accounts appearing in the public talent directory.
- *
- * @param array $args WP_User_Query arguments built by UM.
- * @return array Modified query args.
- */
-function recrewt_um_directory_query_args( $args ) {
-    // Only apply to the talent directory (UM directory form ID — update ID below)
-    // To find the form ID: UM admin → Forms, hover the talent directory form, check the ID in the URL
-    $talent_directory_form_id = 0; // TODO: replace 0 with actual UM form ID after Elouise creates it
-
-    if ( isset( $args['um_form_id'] ) && (int) $args['um_form_id'] === $talent_directory_form_id ) {
-        $args['role__in'] = array( 'talent' );
-    }
-
-    return $args;
-}
-add_filter( 'um_query_args_filter', 'recrewt_um_directory_query_args' );
