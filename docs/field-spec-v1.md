@@ -46,7 +46,7 @@ Column definitions:
 > UM admin path: Ultimate Member → Forms → Add New → select "Profile"
 > Assign to role: **Talent**
 > Page: Create a WP page called "Profile Setup", drop in the UM profile shortcode
-> Post-save redirect: **/dashboard** (or the UM account page)
+> Post-save redirect: **/dashboard** (or the UM account page) — "/dashboard" here is a conceptual name for the Dashboard page, not a literal resolvable URL; see the note under "UM role and directory settings" below.
 
 ### Section A — Identity
 
@@ -139,6 +139,8 @@ Fields deferred to this form:
 | Who can view profiles | Everyone (public) |
 | Who can view DOB field | Members with role: casting_pro, production, admin |
 | Who can edit profile | Owner + admin |
+
+> **Note on the paths above:** `/user/{username}` and `/members` (and `/dashboard`, `/profile-setup` elsewhere in this doc) are conceptual names for pages, not literal resolvable URLs. This site's Permalinks setting is currently **Plain** (`?p=123`), under which none of these pretty paths actually resolve — confirmed directly (`/dashboard` and `/user/{username}` 404; `/members` misresolves to a different site entirely, a separate hosting issue). Any internal link in code must resolve via `get_permalink()` / `get_page_by_path()`, or a query-string page ID — the way `recrewt_um_profile_setup_done()` and `recrewt_um_login_redirect()` already correctly do — never a hardcoded pretty path.
 
 ---
 

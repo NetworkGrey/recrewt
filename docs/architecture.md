@@ -69,6 +69,8 @@ Email verification link
 /dashboard  [account page, completion prompt, quick actions]
 ```
 
+> **Note on the paths above:** these are conceptual names for pages, not literal resolvable URLs. This site's Permalinks setting is currently **Plain** (`?p=123`), under which none of these pretty paths actually resolve as written — confirmed directly (`/register`, `/profile-setup`, `/dashboard`, `/user/{username}` all 404 as literal paths; `/members` misresolves to a different site entirely, a separate hosting issue). Every internal link/redirect in code must resolve via `get_permalink()` / `get_page_by_path()` or a query-string page ID, never a hardcoded pretty path — the existing redirect code (`recrewt_um_profile_setup_done()`, `recrewt_um_login_redirect()`) already does this correctly.
+
 ---
 
 ## Data flow — swipe discovery (Sprint 3)
