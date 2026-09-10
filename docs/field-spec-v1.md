@@ -118,7 +118,7 @@ Fields deferred to this form:
 |---|---|
 | Physical attributes | Weight (kg), eye colour, hair colour, clothing sizes (top, bottom, shoe) |
 | Professional | Union membership status, years of experience, special skills (free text + taxonomy tags), training / qualifications |
-| Media — gallery | Photo gallery (up to 10 images) |
+| Media — gallery | **Deferred for the POC — not built.** Ultimate Member has no native multi-image gallery field type (confirmed against all 23 field types in the UM 2.13.0 form builder palette before deciding this). Not stubbed out with a workaround; revisit if/when a gallery becomes a priority. |
 | Media — showreel | Showreel video URL (YouTube / Vimeo embed, not direct upload for POC) |
 | Media — voice reel | Voice reel audio file OR URL |
 | Availability | Available from / to dates, travel willingness (local only / national / international), current projects (free text) |
