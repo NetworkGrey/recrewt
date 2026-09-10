@@ -69,25 +69,326 @@ function recrewt_enqueue_scripts() {
 
     // "Get Started" / "Join Beta" lead modal — loaded site-wide since these
     // buttons can appear on any page; harmless (no-op) when none are present.
-    wp_enqueue_style(
-        'recrewt-lead-modal',
-        get_stylesheet_directory_uri() . '/css/recrewt-lead-modal.css',
-        array(),
-        '1.0.0'
-    );
-    wp_enqueue_script(
-        'recrewt-lead-modal',
-        get_stylesheet_directory_uri() . '/js/recrewt-lead-modal.js',
-        array(),
-        '1.0.0',
-        true // load in footer
-    );
+    //
+    // Inlined rather than enqueued from separate .js/.css files: this site's
+    // deploy process has no way to add new files to the theme, only edit
+    // existing ones, so registering an empty handle and attaching the code
+    // via wp_add_inline_style()/wp_add_inline_script() is the only path
+    // that's actually deployable here.
+    wp_register_style( 'recrewt-lead-modal', false, array(), '1.0.0' );
+    wp_enqueue_style( 'recrewt-lead-modal' );
+    wp_add_inline_style( 'recrewt-lead-modal', recrewt_lead_modal_css() );
+
+    wp_register_script( 'recrewt-lead-modal', false, array(), '1.0.0', true );
+    wp_enqueue_script( 'recrewt-lead-modal' );
     wp_localize_script( 'recrewt-lead-modal', 'rcLeadModal', array(
         'ajaxUrl' => admin_url( 'admin-ajax.php' ),
         'nonce'   => wp_create_nonce( 'rc_lead_nonce' ),
     ) );
+    wp_add_inline_script( 'recrewt-lead-modal', recrewt_lead_modal_js() );
 }
 add_action( 'wp_enqueue_scripts', 'recrewt_enqueue_scripts' );
+
+
+/**
+ * CSS for the shared "Get Started" / "Join Beta" lead-capture modal.
+ * Inlined via wp_add_inline_style() -- see recrewt_enqueue_scripts() above.
+ */
+function recrewt_lead_modal_css() {
+    return <<<'CSS'
+.rc-lead-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba( 0, 0, 0, 0.6 );
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 100000;
+	padding: 20px;
+}
+
+.rc-lead-modal-overlay[hidden] {
+	display: none;
+}
+
+.rc-lead-modal {
+	background: #fff;
+	border-radius: 8px;
+	max-width: 420px;
+	width: 100%;
+	padding: 32px;
+	position: relative;
+	box-shadow: 0 10px 40px rgba( 0, 0, 0, 0.25 );
+}
+
+.rc-lead-modal-close {
+	position: absolute;
+	top: 12px;
+	right: 16px;
+	background: none;
+	border: none;
+	font-size: 28px;
+	line-height: 1;
+	cursor: pointer;
+	color: #666;
+}
+
+.rc-lead-modal h2 {
+	margin: 0 0 20px;
+	font-size: 22px;
+}
+
+.rc-lead-form {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.rc-lead-form label {
+	font-size: 13px;
+	font-weight: 600;
+	margin-top: 10px;
+}
+
+.rc-lead-form input[type="text"],
+.rc-lead-form input[type="email"],
+.rc-lead-form select {
+	padding: 10px 12px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 15px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.rc-lead-hp-wrap {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.rc-lead-submit {
+	margin-top: 18px;
+	background: #6a2ecf;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	padding: 12px 16px;
+	font-size: 15px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.rc-lead-submit:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
+.rc-lead-message {
+	margin: 10px 0 0;
+	font-size: 14px;
+	min-height: 18px;
+}
+
+.rc-lead-message--success {
+	color: #1a7f37;
+}
+
+.rc-lead-message--error {
+	color: #c53030;
+}
+CSS;
+}
+
+
+/**
+ * JS for the shared "Get Started" / "Join Beta" lead-capture modal.
+ * Inlined via wp_add_inline_script() -- see recrewt_enqueue_scripts() above.
+ * Relies on the rcLeadModal object (ajaxUrl, nonce) localized alongside it.
+ */
+function recrewt_lead_modal_js() {
+    return <<<'JS'
+( function () {
+	'use strict';
+
+	if ( typeof rcLeadModal === 'undefined' ) {
+		return;
+	}
+
+	var ROLE_OPTIONS = [ 'Talent', 'Crew', 'Casting Agent', 'Enterprise' ];
+	var modalEl = null;
+	var currentSource = '';
+
+	function buildModal() {
+		var overlay = document.createElement( 'div' );
+		overlay.className = 'rc-lead-modal-overlay';
+		overlay.setAttribute( 'hidden', '' );
+
+		var optionsHtml = '<option value="">I am a...</option>';
+		ROLE_OPTIONS.forEach( function ( role ) {
+			optionsHtml += '<option value="' + role + '">' + role + '</option>';
+		} );
+
+		overlay.innerHTML =
+			'<div class="rc-lead-modal" role="dialog" aria-modal="true" aria-labelledby="rc-lead-modal-title">' +
+				'<button type="button" class="rc-lead-modal-close" aria-label="Close">&times;</button>' +
+				'<h2 id="rc-lead-modal-title">Join the Beta</h2>' +
+				'<form class="rc-lead-form" novalidate>' +
+					'<label for="rc-lead-name">Name</label>' +
+					'<input type="text" id="rc-lead-name" name="name" required>' +
+
+					'<label for="rc-lead-email">Email</label>' +
+					'<input type="email" id="rc-lead-email" name="email" required>' +
+
+					'<label for="rc-lead-role">I am a...</label>' +
+					'<select id="rc-lead-role" name="role" required>' + optionsHtml + '</select>' +
+
+					'<div class="rc-lead-hp-wrap" aria-hidden="true">' +
+						'<label for="rc-lead-hp">Leave this field blank</label>' +
+						'<input type="text" id="rc-lead-hp" name="rc_lead_hp" tabindex="-1" autocomplete="off">' +
+					'</div>' +
+
+					'<button type="submit" class="rc-lead-submit">Submit</button>' +
+					'<p class="rc-lead-message" role="status" aria-live="polite"></p>' +
+				'</form>' +
+			'</div>';
+
+		document.body.appendChild( overlay );
+
+		overlay.addEventListener( 'click', function ( e ) {
+			if ( e.target === overlay ) {
+				closeModal();
+			}
+		} );
+		overlay.querySelector( '.rc-lead-modal-close' ).addEventListener( 'click', closeModal );
+		overlay.querySelector( '.rc-lead-form' ).addEventListener( 'submit', handleSubmit );
+
+		document.addEventListener( 'keydown', function ( e ) {
+			if ( e.key === 'Escape' && ! overlay.hasAttribute( 'hidden' ) ) {
+				closeModal();
+			}
+		} );
+
+		return overlay;
+	}
+
+	function openModal( source ) {
+		if ( ! modalEl ) {
+			modalEl = buildModal();
+		}
+		currentSource = source;
+
+		var form = modalEl.querySelector( '.rc-lead-form' );
+		form.reset();
+		form.querySelectorAll( 'input, select, button' ).forEach( function ( el ) {
+			el.disabled = false;
+		} );
+		var message = modalEl.querySelector( '.rc-lead-message' );
+		message.textContent = '';
+		message.className = 'rc-lead-message';
+
+		modalEl.removeAttribute( 'hidden' );
+		modalEl.querySelector( '#rc-lead-name' ).focus();
+	}
+
+	function closeModal() {
+		if ( modalEl ) {
+			modalEl.setAttribute( 'hidden', '' );
+		}
+	}
+
+	function isValidEmail( email ) {
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( email );
+	}
+
+	function handleSubmit( e ) {
+		e.preventDefault();
+
+		var form = e.target;
+		var message = form.querySelector( '.rc-lead-message' );
+		var name = form.querySelector( '#rc-lead-name' ).value.trim();
+		var email = form.querySelector( '#rc-lead-email' ).value.trim();
+		var role = form.querySelector( '#rc-lead-role' ).value;
+		var honeypot = form.querySelector( '#rc-lead-hp' ).value;
+
+		message.className = 'rc-lead-message';
+		message.textContent = '';
+
+		if ( ! name || ! email || ! role ) {
+			message.textContent = 'Please fill in all fields.';
+			message.className = 'rc-lead-message rc-lead-message--error';
+			return;
+		}
+		if ( ! isValidEmail( email ) ) {
+			message.textContent = 'Please enter a valid email address.';
+			message.className = 'rc-lead-message rc-lead-message--error';
+			return;
+		}
+
+		var submitBtn = form.querySelector( '.rc-lead-submit' );
+		submitBtn.disabled = true;
+
+		var body = new URLSearchParams();
+		body.append( 'action', 'rc_submit_lead' );
+		body.append( 'nonce', rcLeadModal.nonce );
+		body.append( 'name', name );
+		body.append( 'email', email );
+		body.append( 'role', role );
+		body.append( 'source', currentSource );
+		body.append( 'rc_lead_hp', honeypot );
+
+		fetch( rcLeadModal.ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: body.toString()
+		} )
+			.then( function ( response ) { return response.json(); } )
+			.then( function ( json ) {
+				submitBtn.disabled = false;
+				if ( json.success ) {
+					form.querySelectorAll( 'input, select, button' ).forEach( function ( el ) {
+						el.disabled = true;
+					} );
+					message.textContent = ( json.data && json.data.message ) || "Thanks! We'll be in touch soon.";
+					message.className = 'rc-lead-message rc-lead-message--success';
+				} else {
+					message.textContent = ( json.data && json.data.message ) || 'Something went wrong. Please try again later.';
+					message.className = 'rc-lead-message rc-lead-message--error';
+				}
+			} )
+			.catch( function () {
+				submitBtn.disabled = false;
+				message.textContent = 'Something went wrong. Please try again later.';
+				message.className = 'rc-lead-message rc-lead-message--error';
+			} );
+	}
+
+	function init() {
+		document.querySelectorAll( '.rc-cta-lead' ).forEach( function ( wrapper ) {
+			var trigger = wrapper.querySelector( 'a, button' ) || wrapper;
+			trigger.addEventListener( 'click', function ( e ) {
+				e.preventDefault();
+				var label = trigger.textContent.trim();
+				var source = window.location.pathname + ' — "' + label + '"';
+				openModal( source );
+			} );
+		} );
+	}
+
+	if ( document.readyState === 'loading' ) {
+		document.addEventListener( 'DOMContentLoaded', init );
+	} else {
+		init();
+	}
+} )();
+JS;
+}
 
 
 /* ============================================================
