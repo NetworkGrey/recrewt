@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
    ============================================================ */
 
 /**
- * Restrict the date_of_birth field so it is only visible to
+ * Restrict the date_of_birth and ethnicity fields so they are only visible to
  * casting_pro, production, and admin roles — never the public or talent peers.
  *
  * UM calls this filter for each field when building a profile view. UM's own
@@ -30,7 +30,7 @@ defined( 'ABSPATH' ) || exit;
  * @return bool
  */
 function recrewt_um_can_view_field( $can_view, $data ) {
-    $restricted_fields = array( 'date_of_birth' );
+    $restricted_fields = array( 'date_of_birth', 'ethnicity' );
 
     $key = isset( $data['metakey'] ) ? $data['metakey'] : '';
 
@@ -67,9 +67,18 @@ add_filter( 'um_can_view_field', 'recrewt_um_can_view_field', 10, 2 );
  * Sanitise the bio_short field to strip HTML and enforce max length.
  * UM fires 'um_user_after_updating_profile' after a profile save.
  *
- * @param int $user_id The user whose profile was just saved.
+ * Signature confirmed against UM 2.13.0 source
+ * (includes/core/um-actions-profile.php): the hook actually fires as
+ * do_action( 'um_user_after_updating_profile', $to_update, $user_id, $args ) —
+ * three args, not the single $user_id originally assumed here. That mismatch
+ * meant this callback was silently never receiving a usable $user_id
+ * (WordPress passed $to_update, an array, into the $user_id parameter slot).
+ *
+ * @param array $to_update Submitted form data (unused here).
+ * @param int   $user_id   The user whose profile was just saved.
+ * @param array $args      UM form args (unused here).
  */
-function recrewt_sanitise_bio_on_save( $user_id ) {
+function recrewt_sanitise_bio_on_save( $to_update, $user_id, $args ) {
     $bio = get_user_meta( $user_id, 'bio_short', true );
     if ( ! empty( $bio ) ) {
         $bio = wp_strip_all_tags( $bio );
@@ -77,7 +86,7 @@ function recrewt_sanitise_bio_on_save( $user_id ) {
         update_user_meta( $user_id, 'bio_short', $bio );
     }
 }
-add_action( 'um_user_after_updating_profile', 'recrewt_sanitise_bio_on_save' );
+add_action( 'um_user_after_updating_profile', 'recrewt_sanitise_bio_on_save', 10, 3 );
 
 
 /* ============================================================
