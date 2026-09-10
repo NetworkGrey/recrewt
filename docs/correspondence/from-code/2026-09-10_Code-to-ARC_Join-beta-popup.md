@@ -7,7 +7,7 @@
 - **Audit (step 1): all 5 instances found, all on the Home page.** Full table below — nothing on About, Contact, Profiles, or Jobs.
 - **Labels normalized** to spec: everything "Get Started" except the Casting Agents tier, which stays "Join Beta". Done directly in Elementor (content lives in the DB, not git) and confirmed live.
 - **Build: done and tested end-to-end on staging.** One shared modal, one AJAX handler, nonce + server-side validation + honeypot, emails `hello@recrewt.app` via `wp_mail()`. PR open: [NetworkGrey/recrewt#5](https://github.com/NetworkGrey/recrewt/pull/5).
-- **One real submission has already gone through** (test data below) — `wp_mail()` returned success, but per your own instruction I can't confirm delivery myself. **Need you to check hello@recrewt.app for a "New Beta signup: QA Test User" email and confirm it arrived.**
+- **Email delivery confirmed by Gustav** — the "New Beta signup: QA Test User" test email arrived at hello@recrewt.app. `wp_mail()` is actually delivering on this host; no SMTP plugin needed. Everything in this task is now fully closed out.
 - Flagged, not built: storing submissions in a queryable table — see bottom.
 
 ---
@@ -56,9 +56,9 @@ Published directly to the live Home page (via Elementor's own Publish, not a dra
 4. **Invalid email** — `not-an-email`. Inline: *"Please enter a valid email address."* No AJAX call made.
 5. **Honeypot filled** (simulated bot) — same success response returned, but per the code path this skips validation and `wp_mail()` entirely; a bot gets a success message and learns nothing.
 
-## 5. The one thing only you can confirm
+## 5. Email delivery — confirmed
 
-Per your own instruction: `wp_mail()` returning true doesn't guarantee delivery, since many hosts throttle or drop PHP's default `mail()`. I ran a real submission (Name: "QA Test User", email `qa-test@example.com`, role: Talent) that the server accepted successfully. **Please check hello@recrewt.app for an email titled "New Beta signup: QA Test User" and let me know if it arrived.** If it didn't, the likely cheap fix is a free SMTP plugin (WP Mail SMTP's free tier) — I haven't installed anything preemptively, flagging per your instruction rather than guessing at it.
+Per your own instruction: `wp_mail()` returning true doesn't guarantee delivery, since many hosts throttle or drop PHP's default `mail()`. I ran a real submission (Name: "QA Test User", email `qa-test@example.com`, role: Talent) that the server accepted successfully, and you've confirmed the "New Beta signup: QA Test User" email actually arrived at hello@recrewt.app. This host's `wp_mail()` delivers as-is — no SMTP plugin needed.
 
 ## 6. Flagged, not built
 
